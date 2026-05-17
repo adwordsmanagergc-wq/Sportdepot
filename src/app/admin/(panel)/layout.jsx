@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import AdminLogout from '@/components/admin/AdminLogout';
 
 const NAV = [
@@ -12,18 +13,18 @@ const NAV = [
 export default function AdminPanelLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-ink text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-6 flex-wrap">
-          <Link href="/admin" className="font-display text-2xl tracking-wider">
-            SPORT<span className="text-accent">DEPOT</span>{' '}
-            <span className="text-xs uppercase text-gray-400">Admin</span>
+      <header className="bg-brand text-white">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-6 flex-wrap">
+          <Link href="/admin" className="flex items-center gap-3">
+            <Image src="/logo.png" alt="Sport Depot" width={140} height={84} className="h-12 w-auto" priority />
+            <span className="text-xs uppercase text-white/70 hidden sm:inline">Admin</span>
           </Link>
           <nav className="flex gap-5 flex-wrap">
             {NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
-                className="text-sm uppercase tracking-wide hover:text-accent"
+                className="text-sm uppercase tracking-wide hover:text-yellow-300"
               >
                 {n.label}
               </Link>

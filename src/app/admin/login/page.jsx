@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function AdminLoginPage() {
@@ -41,15 +42,15 @@ function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-ink px-4">
+    <main className="min-h-screen flex items-center justify-center bg-brand px-4">
       <form
         onSubmit={submit}
         className="bg-white rounded-lg p-8 w-full max-w-sm shadow-card"
       >
-        <div className="font-display text-3xl tracking-wider text-center mb-6">
-          SPORT<span className="text-accent">DEPOT</span>
-          <div className="text-xs uppercase tracking-widest text-gray-500 mt-1">Admin</div>
+        <div className="bg-brand rounded-lg p-4 mb-6 flex justify-center">
+          <Image src="/logo.png" alt="Sport Depot" width={200} height={120} className="h-20 w-auto" priority />
         </div>
+        <div className="text-xs uppercase tracking-widest text-gray-500 text-center mb-4">Admin Sign In</div>
         <div className="space-y-4">
           <div>
             <label className="label">Email</label>

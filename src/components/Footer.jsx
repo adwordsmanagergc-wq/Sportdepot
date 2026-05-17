@@ -1,12 +1,19 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
     <footer className="bg-ink text-white mt-16">
       <div className="max-w-7xl mx-auto px-4 py-12 grid gap-10 md:grid-cols-4">
         <div>
-          <div className="font-display text-3xl tracking-wider mb-3">
-            SPORT<span className="text-accent">DEPOT</span>
+          <div className="inline-block bg-brand rounded-lg p-3 mb-4">
+            <Image
+              src="/logo.png"
+              alt="Sport Depot"
+              width={180}
+              height={108}
+              className="h-16 w-auto"
+            />
           </div>
           <p className="text-sm text-gray-300">
             Performance footwear for every sport. Authentic gear from the brands you love.
@@ -42,10 +49,10 @@ export default function Footer() {
             <li>Mon–Sat 9am–6pm AEST</li>
           </ul>
           <div className="flex gap-3 mt-4">
-            <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-accent hover:border-accent">IG</a>
-            <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-accent hover:border-accent">FB</a>
-            <a href="#" aria-label="TikTok" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-accent hover:border-accent">TT</a>
-            <a href="#" aria-label="YouTube" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-accent hover:border-accent">YT</a>
+            <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-brand hover:border-brand">IG</a>
+            <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-brand hover:border-brand">FB</a>
+            <a href="#" aria-label="TikTok" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-brand hover:border-brand">TT</a>
+            <a href="#" aria-label="YouTube" className="w-9 h-9 rounded-full border border-gray-600 flex items-center justify-center hover:bg-brand hover:border-brand">YT</a>
           </div>
         </div>
       </div>

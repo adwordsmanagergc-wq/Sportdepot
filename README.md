@@ -5,6 +5,10 @@ the look and feel of shoewarehouse.com.au. Built with Next.js 14 (App Router),
 Tailwind CSS, Prisma + SQLite (swappable for PostgreSQL), and a JWT‑secured
 admin back‑end.
 
+**Brand palette:** deep red `#a50e2d` on white, with the Sport Depot logo
+(`public/logo.png`) sitting on the red header bar throughout the site and
+admin.
+
 ---
 
 ## Features
