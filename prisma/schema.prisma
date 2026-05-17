@@ -1,0 +1,99 @@
+// Sport Depot database schema
+// Default provider is SQLite for zero-setup local dev.
+// To use Postgres: set provider = "postgresql" and DATABASE_URL accordingly.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  brand       String
+  description String
+  price       Float
+  salePrice   Float?
+  category    String   // men | women | kids
+  sportType   String   // running | basketball | training | soccer | lifestyle | tennis
+  colors      String   // JSON-encoded array of strings
+  images      String   // JSON-encoded array of image URLs
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  isNew       Boolean  @default(false)
+  popularity  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sizes      ProductSize[]
+  orderItems OrderItem[]
+
+  @@index([category])
+  @@index([brand])
+  @@index([sportType])
+  @@index([isArchived])
+}
+
+model ProductSize {
+  id        String  @id @default(cuid())
+  productId String
+  size      String  // e.g. "7", "7.5", "8"
+  stock     Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size])
+  @@index([productId])
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  state         String
+  postcode      String
+  country       String   @default("Australia")
+  subtotal      Float
+  shipping      Float    @default(0)
+  total         Float
+  status        String   @default("pending") // pending | shipped | delivered | cancelled
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([status])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  productId  String
+  productName String
+  brand      String
+  size       String
+  quantity   Int
+  unitPrice  Float
+  imageUrl   String?
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}

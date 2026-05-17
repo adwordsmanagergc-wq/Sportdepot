@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #ff5a1f;
+}
+
+html, body {
+  background: #ffffff;
+  color: #0b0b0b;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-dark px-6 py-3 rounded;
+  }
+  .btn-dark {
+    @apply btn bg-ink text-white hover:bg-black px-6 py-3 rounded;
+  }
+  .btn-outline {
+    @apply btn border-2 border-ink text-ink hover:bg-ink hover:text-white px-6 py-3 rounded;
+  }
+  .badge {
+    @apply inline-block text-xs font-bold uppercase tracking-wider px-2 py-1 rounded;
+  }
+  .badge-sale { @apply badge bg-accent text-white; }
+  .badge-new { @apply badge bg-ink text-white; }
+  .badge-sold { @apply badge bg-gray-200 text-gray-700; }
+
+  .input {
+    @apply w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  .card {
+    @apply bg-white rounded-lg shadow-card;
+  }
+}
+
+/* Hide scrollbar utility for filter rails */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
