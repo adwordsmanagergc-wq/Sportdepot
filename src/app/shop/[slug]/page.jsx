@@ -6,6 +6,8 @@ import FilterSidebar from '@/components/FilterSidebar';
 import SortSelect from '@/components/SortSelect';
 import { prisma } from '@/lib/db';
 import { serializeProduct, CATEGORIES, SPORT_TYPES } from '@/lib/products';
+import { safeQuery } from '@/lib/safeQuery';
+import { mockByCategory, MOCK_BRANDS, MOCK_PRODUCTS } from '@/lib/mockData';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,13 +60,17 @@ async function loadProducts(slug, sp) {
     case 'popular': orderBy = { popularity: 'desc' }; break;
   }
 
-  const rows = await prisma.product.findMany({
-    where,
-    include: { sizes: true },
-    orderBy,
-  });
-
-  let products = rows.map(serializeProduct);
+  let products = await safeQuery(
+    async () => {
+      const rows = await prisma.product.findMany({
+        where,
+        include: { sizes: true },
+        orderBy,
+      });
+      return rows.map(serializeProduct);
+    },
+    () => filterMock(slug, sp),
+  );
 
   // Post-filter by size/color (stored as JSON strings)
   const sizeParam = sp.size;
@@ -86,13 +92,48 @@ async function loadProducts(slug, sp) {
 }
 
 async function loadBrands() {
-  const rows = await prisma.product.findMany({
-    where: { isArchived: false, isActive: true },
-    select: { brand: true },
-    distinct: ['brand'],
-    orderBy: { brand: 'asc' },
-  });
-  return rows.map((r) => r.brand);
+  return safeQuery(
+    async () => {
+      const rows = await prisma.product.findMany({
+        where: { isArchived: false, isActive: true },
+        select: { brand: true },
+        distinct: ['brand'],
+        orderBy: { brand: 'asc' },
+      });
+      return rows.map((r) => r.brand);
+    },
+    MOCK_BRANDS,
+  );
+}
+
+function filterMock(slug, sp) {
+  let products = mockByCategory(slug);
+  if (sp.brand) {
+    const wanted = sp.brand.split(',');
+    products = products.filter((p) => wanted.includes(p.brand));
+  }
+  if (sp.sport) {
+    const wanted = sp.sport.split(',');
+    products = products.filter((p) => wanted.includes(p.sportType));
+  }
+  if (sp.minPrice) products = products.filter((p) => p.price >= Number(sp.minPrice));
+  if (sp.maxPrice) products = products.filter((p) => p.price <= Number(sp.maxPrice));
+  if (sp.q) {
+    const q = sp.q.toLowerCase();
+    products = products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q),
+    );
+  }
+  switch (sp.sort) {
+    case 'price-asc': products = [...products].sort((a, b) => a.price - b.price); break;
+    case 'price-desc': products = [...products].sort((a, b) => b.price - a.price); break;
+    case 'popular': products = [...products].sort((a, b) => b.popularity - a.popularity); break;
+    default: products = [...products].sort((a, b) => b.createdAt - a.createdAt);
+  }
+  return products;
 }
 
 export default async function ShopPage({ params, searchParams }) {

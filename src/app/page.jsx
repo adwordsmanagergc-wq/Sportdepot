@@ -5,28 +5,39 @@ import HeroBanner from '@/components/HeroBanner';
 import ProductGrid from '@/components/ProductGrid';
 import { prisma } from '@/lib/db';
 import { serializeProduct } from '@/lib/products';
+import { safeQuery } from '@/lib/safeQuery';
+import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 export const dynamic = 'force-dynamic';
 
 async function getFeaturedAndNew() {
-  const [featured, fresh] = await Promise.all([
-    prisma.product.findMany({
-      where: { isArchived: false, isActive: true, isFeatured: true },
-      include: { sizes: true },
-      take: 8,
-      orderBy: { popularity: 'desc' },
-    }),
-    prisma.product.findMany({
-      where: { isArchived: false, isActive: true, isNew: true },
-      include: { sizes: true },
-      take: 4,
-      orderBy: { createdAt: 'desc' },
-    }),
-  ]);
-  return {
-    featured: featured.map(serializeProduct),
-    fresh: fresh.map(serializeProduct),
-  };
+  const featured = await safeQuery(
+    async () => {
+      const rows = await prisma.product.findMany({
+        where: { isArchived: false, isActive: true, isFeatured: true },
+        include: { sizes: true },
+        take: 8,
+        orderBy: { popularity: 'desc' },
+      });
+      return rows.map(serializeProduct);
+    },
+    () => MOCK_PRODUCTS.filter((p) => p.isFeatured || p.popularity >= 80).slice(0, 8),
+  );
+
+  const fresh = await safeQuery(
+    async () => {
+      const rows = await prisma.product.findMany({
+        where: { isArchived: false, isActive: true, isNew: true },
+        include: { sizes: true },
+        take: 4,
+        orderBy: { createdAt: 'desc' },
+      });
+      return rows.map(serializeProduct);
+    },
+    () => MOCK_PRODUCTS.filter((p) => p.isNew).slice(0, 4),
+  );
+
+  return { featured, fresh };
 }
 
 const CATEGORY_TILES = [

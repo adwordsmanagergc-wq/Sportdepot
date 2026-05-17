@@ -7,31 +7,46 @@ import AddToCartPanel from '@/components/AddToCartPanel';
 import ProductGrid from '@/components/ProductGrid';
 import { prisma } from '@/lib/db';
 import { serializeProduct } from '@/lib/products';
+import { safeQuery } from '@/lib/safeQuery';
+import { mockProduct, MOCK_PRODUCTS } from '@/lib/mockData';
 
 export const dynamic = 'force-dynamic';
 
 async function getProduct(id) {
-  const p = await prisma.product.findUnique({
-    where: { id },
-    include: { sizes: true },
-  });
-  if (!p || p.isArchived) return null;
-  return serializeProduct(p);
+  return safeQuery(
+    async () => {
+      const p = await prisma.product.findUnique({
+        where: { id },
+        include: { sizes: true },
+      });
+      if (!p || p.isArchived) return null;
+      return serializeProduct(p);
+    },
+    () => mockProduct(id) || null,
+  );
 }
 
 async function getRelated(product) {
-  const rows = await prisma.product.findMany({
-    where: {
-      isArchived: false,
-      isActive: true,
-      id: { not: product.id },
-      OR: [{ category: product.category }, { sportType: product.sportType }],
+  return safeQuery(
+    async () => {
+      const rows = await prisma.product.findMany({
+        where: {
+          isArchived: false,
+          isActive: true,
+          id: { not: product.id },
+          OR: [{ category: product.category }, { sportType: product.sportType }],
+        },
+        include: { sizes: true },
+        take: 4,
+        orderBy: { popularity: 'desc' },
+      });
+      return rows.map(serializeProduct);
     },
-    include: { sizes: true },
-    take: 4,
-    orderBy: { popularity: 'desc' },
-  });
-  return rows.map(serializeProduct);
+    () =>
+      MOCK_PRODUCTS
+        .filter((p) => p.id !== product.id && (p.category === product.category || p.sportType === product.sportType))
+        .slice(0, 4),
+  );
 }
 
 export default async function ProductPage({ params }) {
