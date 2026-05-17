@@ -61,7 +61,7 @@ admin.
 |--------------|---------------------------------------------------------|
 | Framework    | **Next.js 14** (App Router, React 18)                   |
 | Styling      | **Tailwind CSS** with custom sporty palette             |
-| Database     | **Prisma ORM** with **SQLite** by default (or Postgres) |
+| Database     | **Prisma ORM** with **PostgreSQL**                      |
 | Auth         | **JWT** in httpOnly cookie (jose) + bcrypt              |
 | State (cart) | **Zustand** with `localStorage` persistence             |
 | Uploads      | **Local** (`public/uploads/`) or **Cloudinary**         |
@@ -172,12 +172,16 @@ status (pending|shipped|delivered|cancelled), notes?, createdAt, updatedAt`
 ```bash
 git clone <repo> sport-depot && cd sport-depot
 cp .env.example .env
+# Edit .env and set DATABASE_URL to your Postgres connection string.
+# Quickest local Postgres:
+#   docker run -d --name sd-pg -e POSTGRES_PASSWORD=postgres \
+#     -e POSTGRES_DB=sportdepot -p 5432:5432 postgres:16
 npm install
 ```
 
 ### 3. Initialise DB + seed
 ```bash
-npm run db:push     # creates prisma/dev.db from the schema
+npm run db:push     # creates the tables in your Postgres DB
 npm run db:seed     # seeds the admin user + 12 demo products
 ```
 
@@ -217,22 +221,6 @@ Generate a real `JWT_SECRET` with `openssl rand -hex 32`.
 
 ---
 
-## Switching to PostgreSQL
-
-1. Edit `prisma/schema.prisma`:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-   ```
-2. Set `DATABASE_URL="postgresql://user:pass@host:5432/sportdepot"` in `.env`.
-3. Run `npm run db:push && npm run db:seed`.
-
-Everything else works unchanged.
-
----
-
 ## Switching to Cloudinary uploads
 
 1. Create a free Cloudinary account, copy your **Cloud name**, **API key** and
@@ -252,24 +240,61 @@ Everything else works unchanged.
 
 ## Deployment
 
-### Vercel (recommended)
-1. Push the repo to GitHub.
-2. Import the project at <https://vercel.com/new>.
-3. Add the env vars from `.env`. For production data, use a managed Postgres
-   (Vercel Postgres, Neon, Supabase, Railway) and set `DATABASE_URL`
-   accordingly — SQLite **does not work** on serverless Vercel.
-4. Set `UPLOAD_PROVIDER=cloudinary` (the Vercel filesystem is read‑only).
-5. Add a build hook or one‑time job to run `npx prisma db push && npx prisma db seed`
-   against the production database.
+### Deploying to Vercel
+
+Vercel's serverless runtime is **read‑only and ephemeral**, so SQLite and local
+file uploads cannot work in production. Use Postgres + Cloudinary instead.
+
+**1. Provision a Postgres database** (pick one):
+
+   - [Vercel Postgres](https://vercel.com/storage/postgres) (Neon‑powered, easy)
+   - [Neon](https://neon.tech) (free tier)
+   - [Supabase](https://supabase.com) (free tier)
+
+   Copy the connection string — it should look like
+   `postgresql://user:pass@host/db?sslmode=require`.
+
+**2. In the Vercel project → Settings → Environment Variables**, add:
+
+   | Name | Value |
+   |---|---|
+   | `DATABASE_URL` | your Postgres connection string |
+   | `JWT_SECRET` | a random 32‑byte hex (`openssl rand -hex 32`) |
+   | `ADMIN_EMAIL` | e.g. `admin@sportdepot.com` |
+   | `ADMIN_PASSWORD` | a strong password |
+   | `UPLOAD_PROVIDER` | `cloudinary` |
+   | `CLOUDINARY_CLOUD_NAME` | from your Cloudinary dashboard |
+   | `CLOUDINARY_API_KEY` | " |
+   | `CLOUDINARY_API_SECRET` | " |
+
+**3. Initialise the production database** from your local machine
+   (one‑time, before or after the first deploy):
+
+   ```bash
+   # point DATABASE_URL at the production Postgres for these commands
+   export DATABASE_URL="postgresql://...your-prod-url..."
+   npx prisma db push    # creates the schema
+   npm run db:seed       # seeds the admin user + demo products
+   ```
+
+**4. Redeploy.** The Vercel build now runs `prisma generate && next build`
+   only — no DB writes during the build.
+
+> **Why `prisma db push` isn't in the build script:** running it on every
+> deploy would race, can lose data on schema diffs, and requires the DB to
+> be reachable from Vercel's build network. Treat schema changes as a manual
+> one‑off (or move to `prisma migrate deploy` if you adopt migrations).
 
 ### Self‑hosted (Node / Docker)
 ```bash
+npx prisma db push   # one-time, against your DB
+npm run db:seed      # one-time
 npm run build
 npm start
 ```
-The default `build` script runs `prisma generate && prisma db push && next build`
-so deployments stay schema‑synced. Mount a writable volume on
-`public/uploads/` if you keep `UPLOAD_PROVIDER=local`.
+
+Mount a writable volume on `public/uploads/` if you keep
+`UPLOAD_PROVIDER=local`.
 
 ---
 
@@ -278,7 +303,7 @@ so deployments stay schema‑synced. Mount a writable volume on
 | Script              | What it does                                       |
 |---------------------|----------------------------------------------------|
 | `npm run dev`       | Start Next.js dev server on :3000                  |
-| `npm run build`     | Generate Prisma client, sync schema, production build |
+| `npm run build`     | Generate Prisma client + production build (no DB writes) |
 | `npm start`         | Start the production server                        |
 | `npm run db:push`   | Apply `schema.prisma` to the database              |
 | `npm run db:seed`   | Seed admin + 12 demo products                      |
@@ -293,8 +318,8 @@ so deployments stay schema‑synced. Mount a writable volume on
   before the `prisma.order.create` call.
 - Stock is decremented inside a `prisma.$transaction` so concurrent
   checkouts cannot oversell.
-- Search is a simple `contains` over name, brand and description — fine for
-  SQLite. For Postgres, swap in `pg_trgm` or a full‑text index.
+- Search is a simple `contains` over name, brand and description. For
+  better relevance on Postgres, swap in `pg_trgm` or a full‑text index.
 - All admin routes are protected by `src/middleware.js`; trying to hit any
   `/admin/**` page without a session cookie redirects to the login page,
   and admin API routes return `401`.

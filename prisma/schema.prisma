@@ -1,13 +1,15 @@
 // Sport Depot database schema
-// Default provider is SQLite for zero-setup local dev.
-// To use Postgres: set provider = "postgresql" and DATABASE_URL accordingly.
+// PostgreSQL — required for Vercel / serverless deploys.
+// For local dev, point DATABASE_URL at any Postgres instance (Docker, Neon, Supabase, etc).
+// To use SQLite for local dev only, change provider to "sqlite" and set
+// DATABASE_URL="file:./dev.db" — but SQLite WILL NOT WORK on Vercel.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
